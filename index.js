@@ -1,7 +1,8 @@
 const express = require('express');
 const cors = require('cors');
-require('dotenv').config()
+const jwt = require('jsonwebtoken');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+require('dotenv').config()
 const app = express();
 const port = process.env.PORT || 5000;
 
@@ -28,13 +29,29 @@ async function run() {
     // await client.connect();
 
      const assignmentCollection = client.db('onlineStudy').collection('assignments');
+     
+    // auth related api
+    app.post('/jwt', async(req, res) =>{
+      const user = req.body;
+      console.log(user);
+      const token = jwt.sign(user, 'secret', {expiresIn: '1h'})
+      res.send(token);
+    }) 
 
+
+    // assignment related api
     app.post('/assignments', async(req, res) =>{
       const newAssignment = req.body;
       console.log(newAssignment);
       const result = await assignmentCollection.insertOne(newAssignment);
       res.send(result);
     })
+
+    // app.get('/createAssignment', async(req, res) => {
+    //   const cursor = createAssignmentCollection.find();
+    //   const result = await cursor.toArray();
+    //   res.send(result);
+    // })
 
     
     app.get('/assignments', async(req, res) => {
@@ -69,6 +86,13 @@ async function run() {
       }
 
       const result = await assignmentCollection.updateOne(filter, assignment, options)
+      res.send(result);
+    })
+
+    app.delete('/assignments/:id', async(req, res) =>{
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id)}
+      const result = await assignmentCollection.deleteOne(query);
       res.send(result);
     })
 
