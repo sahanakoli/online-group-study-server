@@ -8,11 +8,11 @@ const port = process.env.PORT || 5000;
 
 // middleware
 app.use(cors({
-  origin: ['http://localhost:5173', 'https://zingy-stroopwafel-76030e.netlify.app/'],
+  origin: ['http://localhost:5173', 'https://zingy-stroopwafel-76030e.netlify.app'],
   credentials: true
 }));
 app.use(express.json());
-app.use(cookieParser());
+
 
 
 
@@ -27,6 +27,7 @@ const client = new MongoClient(uri, {
   }
 });
 
+// middleware
 const verifyToken = async(req, res, next) => {
   const token = req.cookies?.token;
   if(!token){
@@ -68,10 +69,10 @@ async function run() {
       console.log('logging out', user);
       res.clearCookie('token', {maxAge: 0}).send({success: true}) 
     })
-
+    
 
     // assignment related api
-    app.post('/assignments', async(req, res) =>{
+    app.post('/assignments',  async(req, res) =>{
       const newAssignment = req.body;
       console.log(newAssignment);
       const result = await assignmentCollection.insertOne(newAssignment);
@@ -80,8 +81,12 @@ async function run() {
 
     
     app.get('/assignments', async(req, res) => {
+      const page = parseInt(req.query.page);
+      console.log('pagination', page);
       const cursor = assignmentCollection.find();
-      const result = await cursor.toArray();
+      const result = await cursor
+      .skip(page)
+      .toArray();
       res.send(result);
     })
 
@@ -93,7 +98,7 @@ async function run() {
       res.send(result);
     });
 
-    app.put('/assignments/:id', async(req, res) => {
+    app.put('/assignments/:id',  async(req, res) => {
       const id = req.params.id;
       const filter = {_id: new ObjectId(id)}
       const options = {upsert: true};
